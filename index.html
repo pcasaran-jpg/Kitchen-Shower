@@ -478,17 +478,6 @@ function render(){
       stamp.textContent = 'Reservado';
       actions.appendChild(stamp);
 
-      const releaseBtn = document.createElement('button');
-      releaseBtn.className = 'btn-release';
-      releaseBtn.textContent = 'Liberar';
-      releaseBtn.onclick = async () => {
-        releaseBtn.disabled = true;
-        const res = await postAction_({ action: 'release', itemId: item.id });
-        if(res && res.claims) claims = res.claims;
-        render();
-      };
-      actions.appendChild(releaseBtn);
-
       row.appendChild(actions);
     } else {
       const form = document.createElement('form');

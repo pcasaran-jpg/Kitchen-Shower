@@ -88,13 +88,10 @@ function doPost(e) {
       return respond_({ ok: true, claims: getClaims_() });
     }
 
-    if (body.action === "release") {
-      sheet.getRange(rowIndex + 1, 3).setValue("");
-      sheet.getRange(rowIndex + 1, 4).setValue("");
-      return respond_({ ok: true, claims: getClaims_() });
-    }
-
-    return respond_({ ok: false, error: "Acción desconocida", claims: getClaims_() });
+    // "release" deshabilitado a propósito: una vez marcado un artículo,
+    // ningún invitado puede liberarlo. Si el dueño necesita corregir un
+    // error, borra el valor de la columna "takenBy" directamente en la Sheet.
+    return respond_({ ok: false, error: "Acción no permitida", claims: getClaims_() });
   } finally {
     lock.releaseLock();
   }
