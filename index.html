@@ -402,7 +402,9 @@ const ITEMS = [
   { id: "20", name: "Jarra de vidrio para jugos y ensaladera" },
 ];
 
-const STORAGE_KEY = "kitchen-shower-pablo-camila-claims";
+// Pega aquí la URL del Web App de Apps Script (ver README.md).
+const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
 let claims = {}; // { itemId: nameString }
 
 const listEl = document.getElementById('listContainer');
@@ -411,19 +413,27 @@ const progressLabel = document.getElementById('progressLabel');
 
 async function loadClaims(){
   try{
-    const result = await window.storage.get(STORAGE_KEY, true);
-    claims = result && result.value ? JSON.parse(result.value) : {};
+    const res = await fetch(APPS_SCRIPT_URL);
+    const data = await res.json();
+    claims = (data && data.claims) || {};
   }catch(e){
-    claims = {};
+    console.error('No se pudo cargar la lista', e);
   }
   render();
 }
 
-async function saveClaims(){
+async function postAction_(body){
   try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify(claims), true);
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body),
+    });
+    return await res.json();
   }catch(e){
     console.error('No se pudo guardar', e);
+    alert('No se pudo guardar el cambio. Revisa tu conexión e inténtalo de nuevo.');
+    return null;
   }
 }
 
@@ -472,9 +482,10 @@ function render(){
       releaseBtn.className = 'btn-release';
       releaseBtn.textContent = 'Liberar';
       releaseBtn.onclick = async () => {
-        delete claims[item.id];
+        releaseBtn.disabled = true;
+        const res = await postAction_({ action: 'release', itemId: item.id });
+        if(res && res.claims) claims = res.claims;
         render();
-        await saveClaims();
       };
       actions.appendChild(releaseBtn);
 
@@ -488,27 +499,21 @@ function render(){
         const val = input.value.trim();
         if(!val) return;
 
-        // Revisamos el estado más reciente justo antes de guardar,
-        // para evitar que dos invitados tomen el mismo artículo a la vez.
-        let latest = {};
-        try{
-          const result = await window.storage.get(STORAGE_KEY, true);
-          latest = result && result.value ? JSON.parse(result.value) : {};
-        }catch(err){
-          latest = {};
-        }
+        const takeBtn = form.querySelector('.btn-take');
+        takeBtn.disabled = true;
 
-        if(latest[item.id]){
-          claims = latest;
+        // El servidor (Apps Script) valida contra la hoja en tiempo real
+        // para evitar que dos invitados tomen el mismo artículo a la vez.
+        const res = await postAction_({ action: 'claim', itemId: item.id, name: val });
+        if(res && res.claims) claims = res.claims;
+
+        if(res && !res.ok && res.takenBy){
           render();
-          alert('Justo antes, "' + item.name + '" fue tomado por ' + latest[item.id] + '. Elige otro artículo 🙂');
+          alert('Justo antes, "' + item.name + '" fue tomado por ' + res.takenBy + '. Elige otro artículo 🙂');
           return;
         }
 
-        claims = latest;
-        claims[item.id] = val;
         render();
-        await saveClaims();
       };
 
       const input = document.createElement('input');
