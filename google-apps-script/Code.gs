@@ -14,7 +14,7 @@ var ITEMS = [
   { id: "3", name: "Air fryer" },
   { id: "4", name: "Juego de ollas antiadherente" },
   { id: "5", name: "Juego de sartenes antiadherente" },
-  { id: "6", name: "Batidora" },
+  { id: "6", name: "Olla a presion Multiusos" },
   { id: "7", name: "Sandwichera" },
   { id: "8", name: "Juego de cubiertos" },
   { id: "9", name: "Juego de vasos de cristal" },
